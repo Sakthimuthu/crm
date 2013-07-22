@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Show current date
+date=`date +%Y-%m-%d`
+
+# github server
+GIT='https://github.com/'
+
+# Change to working space directory. This where all the magic happens
+cd /var/workspace/Sakthimuthu/crm
+
+# Get local snapshot copies revision number
+OLD=`git info local | grep -r Revision | cut -f 2 -d " "`
+
+# Get current development revision number
+NEW=`git info $GIT | grep -r Revision | cut -f 2 -d " "`
+
+# Compare for OLD and NEW revision
+if [ $NEW -gt $OLD ] ; then
+
+	# update local copies
+	git update local	
+
+	# create another local copies
+	cp -r local local
+
+	# Recursively remove all. git directories from folder local
+	find local -name .git -print0 | xargs -0 rm -rf
+
+	# Create archive
+	tar czf /var/www/local/local-Beta.2-revision-$NEW-$date.tar.gz local
+	zip -r /var/www/local/local-Beta.2-revision-$NEW-$date.zip local
+
+	# Dumping git commit log
+	git log -v local > /var/www/local/CHANGELOG
+
+	# Delete folder local
+	rm -rf local
+
+	echo "New revision available on $date. Current is Revision $NEW" >> log
+else
+	# If there's no commit been made
+	echo "No new revision available on $date. Current is Revision $OLD" >> log
+fi
